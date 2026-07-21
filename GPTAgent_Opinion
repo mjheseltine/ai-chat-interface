@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Chat Task</title>
+  <style>
+    :root {
+      --panel: rgba(16, 23, 42, 0.9);
+      --line: rgba(148, 163, 184, 0.18);
+      --text: #e5eefc;
+      --muted: #9db0d0;
+      --accent: #7c8cff;
+      --bubble-user: linear-gradient(135deg, rgba(124, 140, 255, 0.95), rgba(99, 102, 241, 0.9));
+      --bubble-assistant: rgba(30, 41, 59, 0.95);
+      --shadow: 0 18px 45px rgba(0, 0, 0, 0.34);
+      --radius: 20px;
+      --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(124, 140, 255, 0.16), transparent 30%),
+        radial-gradient(circle at 80% 0%, rgba(52, 211, 153, 0.12), transparent 24%),
+        linear-gradient(180deg, #09101f 0%, #0b1020 100%);
+      color: var(--text);
+      font-family: var(--font);
+    }
+
+    body { padding: 24px; }
+
+    .shell {
+      width: min(1100px, 100%);
+      margin: 0 auto;
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      overflow: hidden;
+    }
+
+    .topbar {
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .title h1 {
+      margin: 0 0 6px;
+      font-size: 20px;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
+
+    .title p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(124, 140, 255, 0.12);
+      color: #dbe4ff;
+      border: 1px solid rgba(124, 140, 255, 0.18);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 6px rgba(124, 140, 255, 0.12);
+    }
+
+    .main {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-height: 76vh;
+    }
+
+    .main-header {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(15, 23, 42, 0.66);
+    }
+
+    .model-note {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      background: rgba(52, 211, 153, 0.12);
+      border: 1px solid rgba(52, 211, 153, 0.18);
+      color: #bbf7d0;
+      padding: 8px 12px;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .main-header h2 {
+      margin: 0 0 8px;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .main-header .sub {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .chat {
+      padding: 18px;
+      overflow: auto;
+    }
+
+    .message {
+      max-width: 88%;
+      margin-bottom: 14px;
+      border-radius: 18px;
+      padding: 14px 16px;
+      line-height: 1.55;
+      font-size: 14px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      border: 1px solid transparent;
+    }
+
+    .message.system {
+      max-width: 100%;
+      background: rgba(251, 191, 36, 0.09);
+      color: #fde68a;
+      border-color: rgba(251, 191, 36, 0.18);
+      font-size: 13px;
+    }
+
+    .message.user {
+      margin-left: auto;
+      background: var(--bubble-user);
+      color: white;
+      border-color: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 10px 25px rgba(99, 102, 241, 0.18);
+    }
+
+    .message.assistant {
+      background: var(--bubble-assistant);
+      color: var(--text);
+      border-color: rgba(148, 163, 184, 0.14);
+    }
+
+    .message.error {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.2);
+      color: #fecaca;
+    }
+
+    .progress {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid rgba(148, 163, 184, 0.28);
+      border-top-color: var(--accent);
+      animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .composer {
+      padding: 14px 18px 18px;
+      border-top: 1px solid var(--line);
+      background: rgba(15, 23, 42, 0.72);
+    }
+
+    .composer-grid {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .input-wrap {
+      display: grid;
+      gap: 8px;
+    }
+
+    .input-label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 96px;
+      max-height: 280px;
+      resize: vertical;
+      border-radius: 16px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      background: rgba(8, 13, 28, 0.8);
+      color: var(--text);
+      padding: 14px;
+      font: inherit;
+      line-height: 1.5;
+      outline: none;
+    }
+
+    textarea:focus {
+      border-color: rgba(124, 140, 255, 0.72);
+      box-shadow: 0 0 0 4px rgba(124, 140, 255, 0.12);
+    }
+
+    .actions {
+      display: grid;
+      gap: 10px;
+      width: 200px;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 14px;
+      padding: 13px 16px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .btn:hover:not(:disabled) { transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #7c8cff 0%, #5b6cff 100%);
+      color: white;
+      box-shadow: 0 10px 24px rgba(124, 140, 255, 0.25);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    .tiny {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+      margin-top: 10px;
+    }
+
+    .finished-banner {
+      display: none;
+      margin-top: 12px;
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: rgba(52, 211, 153, 0.12);
+      border: 1px solid rgba(52, 211, 153, 0.18);
+      color: #bbf7d0;
+      font-size: 13px;
+    }
+
+    @media (max-width: 960px) {
+      body { padding: 12px; }
+      .main { min-height: auto; }
+      .composer-grid { grid-template-columns: 1fr; }
+      .actions { width: 100%; grid-template-columns: 1fr 1fr; }
+      .topbar { align-items: flex-start; }
+    }
+
+    @media (max-width: 640px) {
+      .message { max-width: 100%; }
+      .actions { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar card">
+      <div class="title">
+        <h1>AI Chat Task</h1>
+        <p>Read the prompt and chat with the selected model.</p>
+      </div>
+      <div class="pill" id="statusPill"><span class="dot"></span><span id="statusText">Ready</span></div>
+    </div>
+
+    <main class="main card">
+      <header class="main-header">
+        <div class="model-note" id="modelNote">You have selected ChatGPT.</div>
+        <h2 id="taskTitle">Task</h2>
+        <p class="sub" id="taskPrompt">Could you tell us, according to the Congressional Budget Office, approximately what percentage of the federal budget was spent on Social Security in FY2024?</p>
+      </header>
+
+      <section class="chat" id="chatLog" aria-live="polite" aria-label="Chat conversation">
+        <div class="message system" id="systemMessage">Begin chatting with the agent below</div>
+        <div class="message user" id="userMessage" style="display:none;"></div>
+        <div class="message assistant" id="assistantMessage" style="display:none;"></div>
+        <div class="message system progress" id="progressMessage"><div class="spinner"></div><span>Generating response...</span></div>
+      </section>
+
+      <section class="composer">
+        <div class="composer-grid">
+          <div class="input-wrap">
+            <div class="input-label">Message</div>
+            <textarea id="messageInput" placeholder="Type your message here..."></textarea>
+            <div class="tiny">Press Ctrl/Cmd + Enter to send.</div>
+            <div class="finished-banner" id="finishedBanner">Chat ended. You can return to the survey now.</div>
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" id="sendBtn">Send</button>
+            <button class="btn btn-secondary" id="finishBtn">I'm finished chatting</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const BACKEND_ENDPOINT = "https://YOUR-DOMAIN.example.com/api/chat"; // replace this
+    const qs = new URLSearchParams(window.location.search);
+
+    const state = {
+      taskId: qs.get("task_id") || "task_1",
+      title: qs.get("title") || "Task",
+      prompt: qs.get("prompt") || "Could you tell us, according to the Congressional Budget Office, approximately what percentage of the federal budget was spent on Social Security in FY2024?",
+      selectedModel: qs.get("model") || qs.get("selected_model") || "ChatGPT",
+      respondentId: qs.get("respondent_id") || "",
+      sessionId: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+      isLoading: false,
+      finished: false,
+      startedAt: Date.now(),
+      conversation: []
+    };
+
+    const el = {
+      taskTitle: document.getElementById("taskTitle"),
+      taskPrompt: document.getElementById("taskPrompt"),
+      modelNote: document.getElementById("modelNote"),
+      statusText: document.getElementById("statusText"),
+      statusPill: document.getElementById("statusPill"),
+      systemMessage: document.getElementById("systemMessage"),
+      userMessage: document.getElementById("userMessage"),
+      assistantMessage: document.getElementById("assistantMessage"),
+      progressMessage: document.getElementById("progressMessage"),
+      messageInput: document.getElementById("messageInput"),
+      sendBtn: document.getElementById("sendBtn"),
+      finishBtn: document.getElementById("finishBtn"),
+      chatLog: document.getElementById("chatLog"),
+      finishedBanner: document.getElementById("finishedBanner")
+    };
+
+    function setStatus(text, tone = "neutral") {
+      el.statusText.textContent = text;
+      el.statusPill.classList.remove("error", "success");
+      if (tone === "error") el.statusPill.classList.add("error");
+      if (tone === "success") el.statusPill.classList.add("success");
+    }
+
+    function postToParent(type, payload = {}) {
+      try {
+        window.parent?.postMessage({
+          source: "qualtrics-ai-task",
+          type,
+          taskId: state.taskId,
+          respondentId: state.respondentId,
+          sessionId: state.sessionId,
+          ...payload
+        }, "*");
+      } catch (_) {}
+    }
+
+    function updateIframeHeight() {
+      const height = Math.max(document.body.scrollHeight, 700);
+      postToParent("resize", { height });
+    }
+
+    function renderHeader() {
+      el.taskTitle.textContent = state.title;
+      el.taskPrompt.textContent = state.prompt;
+      el.modelNote.textContent = `You have selected ${state.selectedModel}.`;
+      document.title = state.title || "AI Chat Task";
+    }
+
+    function scrollToBottom() {
+      requestAnimationFrame(() => {
+        el.chatLog.scrollTop = el.chatLog.scrollHeight;
+      });
+    }
+
+    function addMessage(role, text) {
+      const div = document.createElement("div");
+      div.className = `message ${role}`;
+      div.textContent = text;
+      el.chatLog.appendChild(div);
+      scrollToBottom();
+      updateIframeHeight();
+      return div;
+    }
+
+    function disableComposer(disabled) {
+      el.messageInput.disabled = disabled;
+      el.sendBtn.disabled = disabled || state.isLoading;
+      el.finishBtn.disabled = disabled;
+    }
+
+    function finishChat() {
+      if (state.finished) return;
+      state.finished = true;
+
+      const durationSeconds = Math.max(1, Math.round((Date.now() - state.startedAt) / 1000));
+
+      disableComposer(true);
+      el.progressMessage.style.display = "none";
+      el.finishedBanner.style.display = "block";
+      setStatus("Chat finished", "success");
+      addMessage("system", "Chat ended. You can return to the survey now.");
+
+      postToParent("chatFinished", {
+        selectedModel: state.selectedModel,
+        durationSeconds,
+        conversation: state.conversation
+      });
+
+      updateIframeHeight();
+    }
+
+    async function sendMessage() {
+      const message = el.messageInput.value.trim();
+      if (!message || state.isLoading || state.finished) return;
+
+      state.isLoading = true;
+      el.sendBtn.disabled = true;
+      el.finishBtn.disabled = true;
+
+      el.systemMessage.style.display = "none";
+      addMessage("user", message);
+      state.conversation.push({ role: "user", content: message });
+
+      el.progressMessage.style.display = "flex";
+      setStatus("Generating response...");
+      updateIframeHeight();
+
+      const payload = {
+        task_id: state.taskId,
+        session_id: state.sessionId,
+        respondent_id: state.respondentId,
+        selected_model: state.selectedModel,
+        prompt: state.prompt,
+        message,
+        conversation: state.conversation,
+        metadata: {
+          page_url: window.location.href,
+          user_agent: navigator.userAgent,
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      try {
+        let answer;
+
+        if (!BACKEND_ENDPOINT || BACKEND_ENDPOINT.includes("YOUR-DOMAIN.example.com")) {
+          answer = demoResponse(state.selectedModel, message, state.prompt, state.conversation.length);
+          await new Promise((r) => setTimeout(r, 850));
+        } else {
+          const response = await fetch(BACKEND_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) throw new Error(`Backend returned ${response.status}`);
+          const data = await response.json();
+          answer = String(data.answer || data.output || data.text || "No answer returned.");
+        }
+
+        addMessage("assistant", answer);
+        state.conversation.push({ role: "assistant", content: answer });
+        setStatus("Response ready", "success");
+        postToParent("chatUpdated", {
+          selectedModel: state.selectedModel,
+          conversation: state.conversation
+        });
+      } catch (err) {
+        const errorText = String(err?.message || err);
+        const errorBubble = addMessage("assistant", `Sorry — the request could not be completed.\n\n${errorText}`);
+        errorBubble.classList.add("error");
+        state.conversation.push({ role: "assistant", content: `ERROR: ${errorText}` });
+        setStatus("Request failed", "error");
+        postToParent("task-error", { message: errorText });
+      } finally {
+        state.isLoading = false;
+        el.progressMessage.style.display = "none";
+        el.messageInput.value = "";
+        el.messageInput.focus();
+        if (!state.finished) {
+          el.sendBtn.disabled = false;
+          el.finishBtn.disabled = false;
+        }
+        updateIframeHeight();
+      }
+    }
+
+    function demoResponse(model, message, prompt, turnNumber) {
+      const options = [
+        "I would approach this by identifying the budget line item and checking whether the cited percentage refers to outlays as a share of total federal spending.",
+        "The key question is whether the figure reflects Social Security's share of the federal budget, rather than its share of GDP or some other baseline.",
+        "A careful answer would distinguish between mandatory spending and discretionary spending, then compare Social Security to total federal outlays."
+      ];
+      const snippet = options[(turnNumber - 1) % options.length];
+      return `Demo only — ${model} would likely respond something like:\n\n${snippet}\n\nPrompt received: ${prompt}`;
+    }
+
+    function initFromParent(data) {
+      if (typeof data.title === "string") state.title = data.title;
+      if (typeof data.prompt === "string") state.prompt = data.prompt;
+      if (typeof data.selectedModel === "string") state.selectedModel = data.selectedModel;
+      if (typeof data.respondentId === "string") state.respondentId = data.respondentId;
+      if (typeof data.taskId === "string") state.taskId = data.taskId;
+      renderHeader();
+      updateIframeHeight();
+    }
+
+    window.addEventListener("message", (event) => {
+      const data = event.data || {};
+      if (data && typeof data === "object") {
+        if (data.type === "init-task") initFromParent(data);
+      }
+    });
+
+    el.sendBtn.addEventListener("click", sendMessage);
+    el.finishBtn.addEventListener("click", finishChat);
+
+    document.addEventListener("keydown", (e) => {
+      if (state.finished) return;
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") sendMessage();
+    });
+
+    renderHeader();
+    el.messageInput.focus();
+    setStatus("Ready");
+    updateIframeHeight();
+    window.addEventListener("load", updateIframeHeight);
+    window.addEventListener("resize", updateIframeHeight);
+    new ResizeObserver(updateIframeHeight).observe(document.body);
+  </script>
+</body>
+</html>
