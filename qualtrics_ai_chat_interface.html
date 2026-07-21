@@ -3,105 +3,42 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Model Choice Task</title>
+  <title>AI Chat Task</title>
   <style>
     :root {
       --bg: #0b1020;
       --panel: rgba(16, 23, 42, 0.9);
-      --panel-2: rgba(15, 23, 42, 0.72);
+      --line: rgba(148, 163, 184, 0.18);
       --text: #e5eefc;
       --muted: #9db0d0;
-      --line: rgba(148, 163, 184, 0.18);
       --accent: #7c8cff;
-      --accent-2: #34d399;
-      --warn: #fbbf24;
       --bubble-user: linear-gradient(135deg, rgba(124, 140, 255, 0.95), rgba(99, 102, 241, 0.9));
       --bubble-assistant: rgba(30, 41, 59, 0.95);
       --shadow: 0 18px 45px rgba(0, 0, 0, 0.34);
       --radius: 20px;
-      --radius-sm: 14px;
-      --maxw: 1100px;
-      --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
 
     * { box-sizing: border-box; }
     html, body {
       margin: 0;
       padding: 0;
+      min-height: 100%;
       background:
-        radial-gradient(circle at 20% 10%, rgba(124, 140, 255, 0.18), transparent 30%),
-        radial-gradient(circle at 80% 0%, rgba(52, 211, 153, 0.14), transparent 24%),
+        radial-gradient(circle at 20% 10%, rgba(124, 140, 255, 0.16), transparent 30%),
+        radial-gradient(circle at 80% 0%, rgba(52, 211, 153, 0.12), transparent 24%),
         linear-gradient(180deg, #09101f 0%, #0b1020 100%);
       color: var(--text);
       font-family: var(--font);
     }
 
-    body {
-      min-height: 100vh;
-      padding: 24px;
-    }
+    body { padding: 24px; }
 
     .shell {
-      width: min(var(--maxw), 100%);
+      width: min(1100px, 100%);
       margin: 0 auto;
       display: grid;
       gap: 18px;
-    }
-
-    .topbar {
-      background: rgba(15, 23, 42, 0.72);
-      backdrop-filter: blur(14px);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 18px 20px;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 16px;
-      align-items: start;
-    }
-
-    .brand h1 {
-      font-size: 20px;
-      line-height: 1.2;
-      margin: 0 0 6px;
-      letter-spacing: -0.02em;
-    }
-
-    .brand p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.55;
-    }
-
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 14px;
-      border-radius: 999px;
-      background: rgba(52, 211, 153, 0.12);
-      color: #b7f7df;
-      font-size: 13px;
-      white-space: nowrap;
-      border: 1px solid rgba(52, 211, 153, 0.18);
-    }
-
-    .status-dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: var(--accent-2);
-      box-shadow: 0 0 0 6px rgba(52, 211, 153, 0.12);
-      flex: 0 0 auto;
-    }
-
-    .workspace {
-      display: grid;
-      grid-template-columns: 330px 1fr;
-      gap: 18px;
-      align-items: start;
     }
 
     .card {
@@ -109,156 +46,77 @@
       border: 1px solid var(--line);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
       overflow: hidden;
     }
 
-    .sidebar {
-      padding: 18px;
-      position: sticky;
-      top: 18px;
-    }
-
-    .section-title {
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--muted);
-      margin: 0 0 10px;
-    }
-
-    .prompt-box {
-      padding: 16px;
-      border-radius: var(--radius-sm);
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid var(--line);
-      margin-bottom: 16px;
-    }
-
-    .prompt-box .label {
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
-
-    .prompt-box .prompt {
-      font-size: 15px;
-      line-height: 1.55;
-      color: var(--text);
-      margin: 0;
-      white-space: pre-wrap;
-    }
-
-    .helper {
-      font-size: 13px;
-      line-height: 1.55;
-      color: var(--muted);
-      margin: 0 0 16px;
-    }
-
-    .models {
-      display: grid;
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-
-    .model-btn {
-      width: 100%;
-      text-align: left;
-      padding: 13px 14px;
-      border-radius: 14px;
-      border: 1px solid rgba(148, 163, 184, 0.18);
-      background: rgba(15, 23, 42, 0.72);
-      color: var(--text);
-      cursor: pointer;
-      transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    .topbar {
+      padding: 18px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 16px;
+      flex-wrap: wrap;
     }
 
-    .model-btn:hover {
-      transform: translateY(-1px);
-      border-color: rgba(124, 140, 255, 0.5);
-      background: rgba(20, 29, 52, 0.88);
+    .title h1 {
+      margin: 0 0 6px;
+      font-size: 20px;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
     }
 
-    .model-btn.selected {
-      border-color: rgba(124, 140, 255, 0.75);
-      background: rgba(124, 140, 255, 0.14);
-      box-shadow: inset 0 0 0 1px rgba(124, 140, 255, 0.15);
-    }
-
-    .model-name {
-      font-weight: 600;
-      font-size: 14px;
-    }
-
-    .model-meta {
-      font-size: 12px;
+    .title p {
+      margin: 0;
       color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
     }
 
-    .selected-badge {
-      font-size: 12px;
-      color: #cbd5ff;
-      background: rgba(124, 140, 255, 0.14);
-      border: 1px solid rgba(124, 140, 255, 0.18);
-      padding: 6px 10px;
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
       border-radius: 999px;
-      display: none;
+      background: rgba(124, 140, 255, 0.12);
+      color: #dbe4ff;
+      border: 1px solid rgba(124, 140, 255, 0.18);
+      font-size: 13px;
       white-space: nowrap;
     }
 
-    .model-btn.selected .selected-badge {
-      display: inline-flex;
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 6px rgba(124, 140, 255, 0.12);
     }
-
-    .controls {
-      display: grid;
-      gap: 10px;
-      margin-top: 18px;
-    }
-
-    .btn {
-      border: 0;
-      border-radius: 14px;
-      padding: 13px 16px;
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-      transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease;
-    }
-
-    .btn:disabled {
-      cursor: not-allowed;
-      opacity: 0.5;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #7c8cff 0%, #5b6cff 100%);
-      color: white;
-      box-shadow: 0 10px 24px rgba(124, 140, 255, 0.25);
-    }
-
-    .btn-secondary {
-      background: rgba(255, 255, 255, 0.05);
-      color: var(--text);
-      border: 1px solid rgba(148, 163, 184, 0.18);
-    }
-
-    .btn:hover:not(:disabled) { transform: translateY(-1px); }
 
     .main {
       display: grid;
-      grid-template-rows: auto auto 1fr auto;
-      min-height: 74vh;
+      grid-template-rows: auto 1fr auto;
+      min-height: 76vh;
     }
 
     .main-header {
       padding: 18px 20px;
       border-bottom: 1px solid var(--line);
       background: rgba(15, 23, 42, 0.66);
+    }
+
+    .model-note {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      background: rgba(52, 211, 153, 0.12);
+      border: 1px solid rgba(52, 211, 153, 0.18);
+      color: #bbf7d0;
+      padding: 8px 12px;
+      font-size: 13px;
+      margin-bottom: 12px;
     }
 
     .main-header h2 {
@@ -271,10 +129,11 @@
       color: var(--muted);
       font-size: 14px;
       line-height: 1.5;
+      margin: 0;
     }
 
     .chat {
-      padding: 18px 18px 8px;
+      padding: 18px;
       overflow: auto;
     }
 
@@ -312,12 +171,30 @@
       border-color: rgba(148, 163, 184, 0.14);
     }
 
-    .message .meta {
-      display: block;
-      margin-top: 8px;
-      font-size: 11px;
-      color: rgba(229, 238, 252, 0.64);
+    .message.error {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.2);
+      color: #fecaca;
     }
+
+    .progress {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid rgba(148, 163, 184, 0.28);
+      border-top-color: var(--accent);
+      animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     .composer {
       padding: 14px 18px 18px;
@@ -351,7 +228,7 @@
       border: 1px solid rgba(148, 163, 184, 0.18);
       background: rgba(8, 13, 28, 0.8);
       color: var(--text);
-      padding: 14px 14px;
+      padding: 14px;
       font: inherit;
       line-height: 1.5;
       outline: none;
@@ -362,205 +239,117 @@
       box-shadow: 0 0 0 4px rgba(124, 140, 255, 0.12);
     }
 
-    .composer-actions {
+    .actions {
       display: grid;
       gap: 10px;
-      width: 190px;
+      width: 180px;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 14px;
+      padding: 13px 16px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .btn:hover:not(:disabled) { transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #7c8cff 0%, #5b6cff 100%);
+      color: white;
+      box-shadow: 0 10px 24px rgba(124, 140, 255, 0.25);
     }
 
     .tiny {
       font-size: 12px;
       color: var(--muted);
       line-height: 1.45;
-    }
-
-    .footer-note {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 12px;
-    }
-
-    .progress {
-      display: none;
-      align-items: center;
-      gap: 10px;
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    .spinner {
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      border: 2px solid rgba(148, 163, 184, 0.28);
-      border-top-color: var(--accent);
-      animation: spin 0.9s linear infinite;
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .error {
-      background: rgba(239, 68, 68, 0.1);
-      border-color: rgba(239, 68, 68, 0.2);
-      color: #fecaca;
-    }
-
-    .success {
-      background: rgba(52, 211, 153, 0.1);
-      border-color: rgba(52, 211, 153, 0.2);
-      color: #bbf7d0;
+      margin-top: 10px;
     }
 
     @media (max-width: 960px) {
       body { padding: 12px; }
-      .workspace { grid-template-columns: 1fr; }
-      .sidebar { position: static; }
       .main { min-height: auto; }
       .composer-grid { grid-template-columns: 1fr; }
-      .composer-actions { width: 100%; grid-template-columns: 1fr 1fr; }
-      .topbar { grid-template-columns: 1fr; }
+      .actions { width: 100%; grid-template-columns: 1fr; }
+      .topbar { align-items: flex-start; }
     }
 
     @media (max-width: 640px) {
       .message { max-width: 100%; }
-      .composer-actions { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
   <div class="shell">
     <div class="topbar card">
-      <div class="brand">
-        <h1>AI Model Choice Task</h1>
-        <p>Respondents choose a model, ask it to answer a prompt, and the selection can be saved back into Qualtrics.</p>
+      <div class="title">
+        <h1>AI Chat Task</h1>
+        <p>Read the prompt and chat with the selected model.</p>
       </div>
-      <div class="status-pill" id="statusPill">
-        <span class="status-dot"></span>
-        <span id="statusText">Ready</span>
-      </div>
+      <div class="pill" id="statusPill"><span class="dot"></span><span id="statusText">Ready</span></div>
     </div>
 
-    <div class="workspace">
-      <aside class="sidebar card">
-        <p class="section-title">Task prompt</p>
-        <div class="prompt-box">
-          <div class="label">Question for the model</div>
-          <p class="prompt" id="promptText">Loading prompt...</p>
-        </div>
+    <main class="main card">
+      <header class="main-header">
+        <div class="model-note" id="modelNote">You have selected ChatGPT.</div>
+        <h2 id="taskTitle">Task</h2>
+        <p class="sub" id="taskPrompt">Could you tell us, according to the Congressional Budget Office, approximately what percentage of the federal budget was spent on Social Security in FY2024?</p>
+      </header>
 
-        <p class="helper">
-          Choose the model you would most like to use for this question, then submit your request.
-        </p>
+      <section class="chat" id="chatLog" aria-live="polite" aria-label="Chat conversation">
+        <div class="message system" id="systemMessage">Begin chatting with the agent below</div>
+        <div class="message user" id="userMessage" style="display:none;"></div>
+        <div class="message assistant" id="assistantMessage" style="display:none;"></div>
+        <div class="message system progress" id="progressMessage"><div class="spinner"></div><span>Generating response...</span></div>
+      </section>
 
-        <p class="section-title">Choose a model</p>
-        <div class="models" id="modelList"></div>
-
-        <div class="controls">
-          <button class="btn btn-primary" id="submitBtn" disabled>Ask selected model</button>
-          <button class="btn btn-secondary" id="skipBtn">Skip task</button>
-        </div>
-
-        <div class="footer-note">
-          The interface can be embedded in Qualtrics through an iframe. The selected model is sent to the parent page and optionally to your backend.
-        </div>
-      </aside>
-
-      <main class="main card">
-        <header class="main-header">
-          <h2 id="mainTitle">Model interaction</h2>
-          <div class="sub" id="mainSubtitle">Pick a model on the left, then send the task.</div>
-        </header>
-
-        <section class="chat" id="chatLog" aria-live="polite" aria-label="Chat conversation">
-          <div class="message system" id="systemMessage">
-            This is a live chat-style interface. The respondent selects a model, and the app asks your backend for a response.
+      <section class="composer">
+        <div class="composer-grid">
+          <div class="input-wrap">
+            <div class="input-label">Message</div>
+            <textarea id="messageInput" placeholder="Type your message here..."></textarea>
+            <div class="tiny">Press Ctrl/Cmd + Enter to send.</div>
           </div>
-
-          <div class="message user" id="userMessage" style="display:none;"></div>
-          <div class="message assistant" id="assistantMessage" style="display:none;"></div>
-          <div class="message system progress" id="progressMessage">
-            <div class="spinner"></div>
-            <span>Generating response...</span>
+          <div class="actions">
+            <button class="btn btn-primary" id="sendBtn">Send</button>
           </div>
-        </section>
-
-        <section class="composer">
-          <div class="composer-grid">
-            <div class="input-wrap">
-              <div class="input-label">Optional respondent note</div>
-              <textarea id="noteInput" placeholder="Type anything you'd like to add to the prompt, or leave this blank."></textarea>
-              <div class="tiny">Tip: You can keep this empty if you only want the model-selection behavior.</div>
-            </div>
-
-            <div class="composer-actions">
-              <button class="btn btn-primary" id="sendBtn" disabled>Send to model</button>
-              <button class="btn btn-secondary" id="copyBtn">Copy debug state</button>
-              <button class="btn btn-secondary" id="resetBtn">Reset</button>
-            </div>
-          </div>
-        </section>
-      </main>
-    </div>
+        </div>
+      </section>
+    </main>
   </div>
 
   <script>
     const BACKEND_ENDPOINT = "https://YOUR-DOMAIN.example.com/api/chat"; // replace this
-    const DEFAULT_MODELS = [
-      { id: "gpt-4.1", label: "ChatGPT", meta: "General-purpose reasoning" },
-      { id: "claude-3.7-sonnet", label: "Claude", meta: "Long-form reasoning" },
-      { id: "gemini-2.0-flash", label: "Gemini", meta: "Fast responses" },
-      { id: "perplexity", label: "Perplexity", meta: "Search-friendly answers" },
-      { id: "copilot", label: "Copilot", meta: "Productivity-focused" },
-      { id: "other", label: "Other", meta: "Alternative model" },
-      { id: "none", label: "I would not use AI", meta: "Skip LLM" }
-    ];
-
     const qs = new URLSearchParams(window.location.search);
+
     const state = {
       taskId: qs.get("task_id") || "task_1",
-      title: qs.get("title") || "Model interaction",
-      prompt: qs.get("prompt") || "Loading prompt...",
+      title: qs.get("title") || "Task",
+      prompt: qs.get("prompt") || "Could you tell us, according to the Congressional Budget Office, approximately what percentage of the federal budget was spent on Social Security in FY2024?",
+      selectedModel: qs.get("model") || qs.get("selected_model") || "ChatGPT",
       respondentId: qs.get("respondent_id") || "",
       sessionId: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-      selectedModel: null,
-      models: DEFAULT_MODELS,
-      lastAnswer: "",
       isLoading: false,
-      submitted: false
+      lastAnswer: ""
     };
 
-    try {
-      const modelsParam = qs.get("models");
-      if (modelsParam) {
-        const parsed = JSON.parse(decodeURIComponent(modelsParam));
-        if (Array.isArray(parsed) && parsed.length) {
-          state.models = parsed.map((m) => ({
-            id: String(m.id || m.label || m),
-            label: String(m.label || m.id || m),
-            meta: String(m.meta || "")
-          }));
-        }
-      }
-    } catch (_) {}
-
     const el = {
-      promptText: document.getElementById("promptText"),
-      mainTitle: document.getElementById("mainTitle"),
-      mainSubtitle: document.getElementById("mainSubtitle"),
-      modelList: document.getElementById("modelList"),
-      submitBtn: document.getElementById("submitBtn"),
-      sendBtn: document.getElementById("sendBtn"),
-      skipBtn: document.getElementById("skipBtn"),
-      resetBtn: document.getElementById("resetBtn"),
-      copyBtn: document.getElementById("copyBtn"),
-      chatLog: document.getElementById("chatLog"),
+      taskTitle: document.getElementById("taskTitle"),
+      taskPrompt: document.getElementById("taskPrompt"),
+      modelNote: document.getElementById("modelNote"),
+      statusText: document.getElementById("statusText"),
+      statusPill: document.getElementById("statusPill"),
+      systemMessage: document.getElementById("systemMessage"),
       userMessage: document.getElementById("userMessage"),
       assistantMessage: document.getElementById("assistantMessage"),
       progressMessage: document.getElementById("progressMessage"),
-      systemMessage: document.getElementById("systemMessage"),
-      noteInput: document.getElementById("noteInput"),
-      statusText: document.getElementById("statusText"),
-      statusPill: document.getElementById("statusPill")
+      messageInput: document.getElementById("messageInput"),
+      sendBtn: document.getElementById("sendBtn")
     };
 
     function setStatus(text, tone = "neutral") {
@@ -584,69 +373,29 @@
     }
 
     function updateIframeHeight() {
-      const height = Math.max(document.body.scrollHeight, 800);
+      const height = Math.max(document.body.scrollHeight, 700);
       postToParent("resize", { height });
     }
 
     function renderHeader() {
-      el.mainTitle.textContent = state.title || "Model interaction";
-      el.mainSubtitle.textContent = "Selected model: " + (state.selectedModel?.label || "none yet") + ". Send the task once you are ready.";
-      el.promptText.textContent = state.prompt;
-      document.title = state.title || "AI Model Choice Task";
+      el.taskTitle.textContent = state.title;
+      el.taskPrompt.textContent = state.prompt;
+      el.modelNote.textContent = `You have selected ${state.selectedModel}.`;
+      document.title = state.title || "AI Chat Task";
     }
 
-    function renderModels() {
-      el.modelList.innerHTML = "";
-      state.models.forEach((model) => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "model-btn" + (state.selectedModel?.id === model.id ? " selected" : "");
-        button.setAttribute("aria-pressed", state.selectedModel?.id === model.id ? "true" : "false");
-        button.innerHTML = `
-          <span>
-            <span class="model-name">${escapeHtml(model.label)}</span><br />
-            <span class="model-meta">${escapeHtml(model.meta || "")}</span>
-          </span>
-          <span class="selected-badge">Selected</span>
-        `;
-        button.addEventListener("click", () => {
-          state.selectedModel = model;
-          state.submitted = false;
-          renderModels();
-          refreshButtons();
-          setStatus(`Selected ${model.label}`);
-          postToParent("model-selected", { selectedModel: model });
-          updateIframeHeight();
-        });
-        el.modelList.appendChild(button);
-      });
-    }
-
-    function refreshButtons() {
-      const enabled = !!state.selectedModel && !state.isLoading;
-      el.submitBtn.disabled = !enabled;
-      el.sendBtn.disabled = !enabled;
-      el.skipBtn.disabled = state.isLoading;
-      el.resetBtn.disabled = state.isLoading;
-      el.copyBtn.disabled = state.isLoading;
-    }
-
-    async function callBackend() {
-      if (!state.selectedModel) return;
-
-      const note = el.noteInput.value.trim();
-      const fullPrompt = note ? `${state.prompt}
-
-Additional note from respondent: ${note}` : state.prompt;
+    async function sendMessage() {
+      const message = el.messageInput.value.trim();
+      if (!message || state.isLoading) return;
 
       state.isLoading = true;
-      refreshButtons();
-      setStatus("Generating response...");
+      el.sendBtn.disabled = true;
       el.systemMessage.style.display = "none";
-      el.userMessage.textContent = fullPrompt;
+      el.userMessage.textContent = message;
       el.userMessage.style.display = "block";
       el.assistantMessage.style.display = "none";
       el.progressMessage.style.display = "flex";
+      setStatus("Generating response...");
       updateIframeHeight();
 
       const payload = {
@@ -655,8 +404,7 @@ Additional note from respondent: ${note}` : state.prompt;
         respondent_id: state.respondentId,
         selected_model: state.selectedModel,
         prompt: state.prompt,
-        full_prompt: fullPrompt,
-        note,
+        message,
         metadata: {
           page_url: window.location.href,
           user_agent: navigator.userAgent,
@@ -666,17 +414,13 @@ Additional note from respondent: ${note}` : state.prompt;
 
       try {
         if (!BACKEND_ENDPOINT || BACKEND_ENDPOINT.includes("YOUR-DOMAIN.example.com")) {
-          const demo = demoResponse(state.selectedModel.label, state.prompt);
-          await new Promise((r) => setTimeout(r, 900));
+          const demo = demoResponse(state.selectedModel, message, state.prompt);
+          await new Promise((r) => setTimeout(r, 850));
           el.assistantMessage.textContent = demo;
           el.assistantMessage.style.display = "block";
           state.lastAnswer = demo;
-          state.isLoading = false;
-          state.submitted = true;
-          refreshButtons();
           setStatus("Demo response shown", "success");
           postToParent("task-complete", { selectedModel: state.selectedModel, answer: demo, payload });
-          updateIframeHeight();
           return;
         }
 
@@ -687,150 +431,62 @@ Additional note from respondent: ${note}` : state.prompt;
         });
 
         if (!response.ok) throw new Error(`Backend returned ${response.status}`);
-
         const data = await response.json();
         const answer = String(data.answer || data.output || data.text || "No answer returned.");
         el.assistantMessage.textContent = answer;
         el.assistantMessage.style.display = "block";
         state.lastAnswer = answer;
-        state.isLoading = false;
-        state.submitted = true;
-        refreshButtons();
         setStatus("Response saved", "success");
         postToParent("task-complete", { selectedModel: state.selectedModel, answer, backendResponse: data, payload });
       } catch (err) {
-        state.isLoading = false;
-        refreshButtons();
-        el.assistantMessage.textContent = `Sorry — the request could not be completed.
-
-${err?.message || err}`;
+        const message = String(err?.message || err);
+        el.assistantMessage.textContent = `Sorry — the request could not be completed.\n\n${message}`;
         el.assistantMessage.classList.add("error");
         el.assistantMessage.style.display = "block";
         setStatus("Request failed", "error");
-        postToParent("task-error", { message: String(err?.message || err) });
+        postToParent("task-error", { message });
       } finally {
+        state.isLoading = false;
         el.progressMessage.style.display = "none";
+        el.sendBtn.disabled = false;
+        el.messageInput.focus();
         updateIframeHeight();
       }
     }
 
-    function demoResponse(modelLabel, prompt) {
-      const snippets = [
-        "I would answer by first identifying the relevant rule, then testing whether the proposal is likely to satisfy it.",
-        "A careful reading suggests the policy is not a natural fit for reconciliation unless it clearly changes federal revenues or spending.",
-        "The best answer depends on whether the proposal has a direct budgetary effect, not simply a policy effect."
-      ];
-      return `Demo only — ${modelLabel} would likely respond something like:
-
-${snippets[Math.floor(Math.random() * snippets.length)]}
-
-Prompt received: ${prompt}`;
+    function demoResponse(model, message, prompt) {
+      return `Demo only — ${model} would likely respond something like:\n\nI understand the task as: ${prompt}\n\nYour message was: ${message}\n\nA real backend call will replace this text once configured.`;
     }
 
-    function escapeHtml(str) {
-      return String(str)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#39;");
-    }
-
-    function resetTask() {
-      state.selectedModel = null;
-      state.isLoading = false;
-      state.submitted = false;
-      state.lastAnswer = "";
-      el.noteInput.value = "";
-      el.systemMessage.style.display = "block";
-      el.userMessage.style.display = "none";
-      el.assistantMessage.style.display = "none";
-      el.assistantMessage.classList.remove("error");
-      el.progressMessage.style.display = "none";
-      renderModels();
-      refreshButtons();
+    function initFromParent(data) {
+      if (typeof data.title === "string") state.title = data.title;
+      if (typeof data.prompt === "string") state.prompt = data.prompt;
+      if (typeof data.selectedModel === "string") state.selectedModel = data.selectedModel;
+      if (typeof data.respondentId === "string") state.respondentId = data.respondentId;
+      if (typeof data.taskId === "string") state.taskId = data.taskId;
       renderHeader();
-      setStatus("Ready");
-      postToParent("task-reset", { taskId: state.taskId });
       updateIframeHeight();
-    }
-
-    function skipTask() {
-      postToParent("task-skipped", {
-        taskId: state.taskId,
-        selectedModel: state.selectedModel
-      });
-      setStatus("Skipped", "success");
-      el.systemMessage.classList.add("success");
-      el.systemMessage.textContent = "This task was skipped.";
-      el.userMessage.style.display = "none";
-      el.assistantMessage.style.display = "none";
-      updateIframeHeight();
-    }
-
-    async function copyState() {
-      const debug = {
-        taskId: state.taskId,
-        respondentId: state.respondentId,
-        sessionId: state.sessionId,
-        title: state.title,
-        prompt: state.prompt,
-        selectedModel: state.selectedModel,
-        lastAnswer: state.lastAnswer
-      };
-      try {
-        await navigator.clipboard.writeText(JSON.stringify(debug, null, 2));
-        setStatus("Debug state copied", "success");
-      } catch {
-        setStatus("Clipboard unavailable", "error");
-      }
     }
 
     window.addEventListener("message", (event) => {
       const data = event.data || {};
-      if (!data || typeof data !== "object") return;
-
-      if (data.type === "init-task") {
-        if (typeof data.title === "string") state.title = data.title;
-        if (typeof data.prompt === "string") state.prompt = data.prompt;
-        if (Array.isArray(data.models) && data.models.length) {
-          state.models = data.models.map((m) => ({
-            id: String(m.id || m.label || m),
-            label: String(m.label || m.id || m),
-            meta: String(m.meta || "")
-          }));
-        }
-        if (typeof data.respondentId === "string") state.respondentId = data.respondentId;
-        if (typeof data.taskId === "string") state.taskId = data.taskId;
-        renderHeader();
-        renderModels();
-        refreshButtons();
-        updateIframeHeight();
+      if (data && typeof data === "object" && data.type === "init-task") {
+        initFromParent(data);
       }
     });
 
-    el.submitBtn.addEventListener("click", callBackend);
-    el.sendBtn.addEventListener("click", callBackend);
-    el.skipBtn.addEventListener("click", skipTask);
-    el.resetBtn.addEventListener("click", resetTask);
-    el.copyBtn.addEventListener("click", copyState);
-
+    el.sendBtn.addEventListener("click", sendMessage);
     document.addEventListener("keydown", (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && !el.sendBtn.disabled) {
-        callBackend();
-      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") sendMessage();
     });
 
     renderHeader();
-    renderModels();
-    refreshButtons();
-    updateIframeHeight();
+    el.messageInput.focus();
     setStatus("Ready");
-
-    const ro = new ResizeObserver(() => updateIframeHeight());
-    ro.observe(document.body);
+    updateIframeHeight();
     window.addEventListener("load", updateIframeHeight);
     window.addEventListener("resize", updateIframeHeight);
+    new ResizeObserver(updateIframeHeight).observe(document.body);
   </script>
 </body>
 </html>
