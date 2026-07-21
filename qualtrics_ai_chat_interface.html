@@ -6,7 +6,6 @@
   <title>AI Chat Task</title>
   <style>
     :root {
-      --bg: #0b1020;
       --panel: rgba(16, 23, 42, 0.9);
       --line: rgba(148, 163, 184, 0.18);
       --text: #e5eefc;
@@ -242,7 +241,7 @@
     .actions {
       display: grid;
       gap: 10px;
-      width: 180px;
+      width: 200px;
     }
 
     .btn {
@@ -264,6 +263,12 @@
       box-shadow: 0 10px 24px rgba(124, 140, 255, 0.25);
     }
 
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
     .tiny {
       font-size: 12px;
       color: var(--muted);
@@ -271,16 +276,28 @@
       margin-top: 10px;
     }
 
+    .finished-banner {
+      display: none;
+      margin-top: 12px;
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: rgba(52, 211, 153, 0.12);
+      border: 1px solid rgba(52, 211, 153, 0.18);
+      color: #bbf7d0;
+      font-size: 13px;
+    }
+
     @media (max-width: 960px) {
       body { padding: 12px; }
       .main { min-height: auto; }
       .composer-grid { grid-template-columns: 1fr; }
-      .actions { width: 100%; grid-template-columns: 1fr; }
+      .actions { width: 100%; grid-template-columns: 1fr 1fr; }
       .topbar { align-items: flex-start; }
     }
 
     @media (max-width: 640px) {
       .message { max-width: 100%; }
+      .actions { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -314,9 +331,11 @@
             <div class="input-label">Message</div>
             <textarea id="messageInput" placeholder="Type your message here..."></textarea>
             <div class="tiny">Press Ctrl/Cmd + Enter to send.</div>
+            <div class="finished-banner" id="finishedBanner">Chat ended. You can return to the survey now.</div>
           </div>
           <div class="actions">
             <button class="btn btn-primary" id="sendBtn">Send</button>
+            <button class="btn btn-secondary" id="finishBtn">I'm finished chatting</button>
           </div>
         </div>
       </section>
@@ -335,7 +354,9 @@
       respondentId: qs.get("respondent_id") || "",
       sessionId: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
       isLoading: false,
-      lastAnswer: ""
+      finished: false,
+      startedAt: Date.now(),
+      conversation: []
     };
 
     const el = {
@@ -349,7 +370,10 @@
       assistantMessage: document.getElementById("assistantMessage"),
       progressMessage: document.getElementById("progressMessage"),
       messageInput: document.getElementById("messageInput"),
-      sendBtn: document.getElementById("sendBtn")
+      sendBtn: document.getElementById("sendBtn"),
+      finishBtn: document.getElementById("finishBtn"),
+      chatLog: document.getElementById("chatLog"),
+      finishedBanner: document.getElementById("finishedBanner")
     };
 
     function setStatus(text, tone = "neutral") {
@@ -384,16 +408,61 @@
       document.title = state.title || "AI Chat Task";
     }
 
+    function scrollToBottom() {
+      requestAnimationFrame(() => {
+        el.chatLog.scrollTop = el.chatLog.scrollHeight;
+      });
+    }
+
+    function addMessage(role, text) {
+      const div = document.createElement("div");
+      div.className = `message ${role}`;
+      div.textContent = text;
+      el.chatLog.appendChild(div);
+      scrollToBottom();
+      updateIframeHeight();
+      return div;
+    }
+
+    function disableComposer(disabled) {
+      el.messageInput.disabled = disabled;
+      el.sendBtn.disabled = disabled || state.isLoading;
+      el.finishBtn.disabled = disabled;
+    }
+
+    function finishChat() {
+      if (state.finished) return;
+      state.finished = true;
+
+      const durationSeconds = Math.max(1, Math.round((Date.now() - state.startedAt) / 1000));
+
+      disableComposer(true);
+      el.progressMessage.style.display = "none";
+      el.finishedBanner.style.display = "block";
+      setStatus("Chat finished", "success");
+      addMessage("system", "Chat ended. You can return to the survey now.");
+
+      postToParent("chatFinished", {
+        selectedModel: state.selectedModel,
+        durationSeconds,
+        conversation: state.conversation
+      });
+
+      updateIframeHeight();
+    }
+
     async function sendMessage() {
       const message = el.messageInput.value.trim();
-      if (!message || state.isLoading) return;
+      if (!message || state.isLoading || state.finished) return;
 
       state.isLoading = true;
       el.sendBtn.disabled = true;
+      el.finishBtn.disabled = true;
+
       el.systemMessage.style.display = "none";
-      el.userMessage.textContent = message;
-      el.userMessage.style.display = "block";
-      el.assistantMessage.style.display = "none";
+      addMessage("user", message);
+      state.conversation.push({ role: "user", content: message });
+
       el.progressMessage.style.display = "flex";
       setStatus("Generating response...");
       updateIframeHeight();
@@ -405,6 +474,7 @@
         selected_model: state.selectedModel,
         prompt: state.prompt,
         message,
+        conversation: state.conversation,
         metadata: {
           page_url: window.location.href,
           user_agent: navigator.userAgent,
@@ -413,49 +483,58 @@
       };
 
       try {
+        let answer;
+
         if (!BACKEND_ENDPOINT || BACKEND_ENDPOINT.includes("YOUR-DOMAIN.example.com")) {
-          const demo = demoResponse(state.selectedModel, message, state.prompt);
+          answer = demoResponse(state.selectedModel, message, state.prompt, state.conversation.length);
           await new Promise((r) => setTimeout(r, 850));
-          el.assistantMessage.textContent = demo;
-          el.assistantMessage.style.display = "block";
-          state.lastAnswer = demo;
-          setStatus("Demo response shown", "success");
-          postToParent("task-complete", { selectedModel: state.selectedModel, answer: demo, payload });
-          return;
+        } else {
+          const response = await fetch(BACKEND_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) throw new Error(`Backend returned ${response.status}`);
+          const data = await response.json();
+          answer = String(data.answer || data.output || data.text || "No answer returned.");
         }
 
-        const response = await fetch(BACKEND_ENDPOINT, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
+        addMessage("assistant", answer);
+        state.conversation.push({ role: "assistant", content: answer });
+        setStatus("Response ready", "success");
+        postToParent("chatUpdated", {
+          selectedModel: state.selectedModel,
+          conversation: state.conversation
         });
-
-        if (!response.ok) throw new Error(`Backend returned ${response.status}`);
-        const data = await response.json();
-        const answer = String(data.answer || data.output || data.text || "No answer returned.");
-        el.assistantMessage.textContent = answer;
-        el.assistantMessage.style.display = "block";
-        state.lastAnswer = answer;
-        setStatus("Response saved", "success");
-        postToParent("task-complete", { selectedModel: state.selectedModel, answer, backendResponse: data, payload });
       } catch (err) {
-        const message = String(err?.message || err);
-        el.assistantMessage.textContent = `Sorry — the request could not be completed.\n\n${message}`;
-        el.assistantMessage.classList.add("error");
-        el.assistantMessage.style.display = "block";
+        const errorText = String(err?.message || err);
+        const errorBubble = addMessage("assistant", `Sorry — the request could not be completed.\n\n${errorText}`);
+        errorBubble.classList.add("error");
+        state.conversation.push({ role: "assistant", content: `ERROR: ${errorText}` });
         setStatus("Request failed", "error");
-        postToParent("task-error", { message });
+        postToParent("task-error", { message: errorText });
       } finally {
         state.isLoading = false;
         el.progressMessage.style.display = "none";
-        el.sendBtn.disabled = false;
+        el.messageInput.value = "";
         el.messageInput.focus();
+        if (!state.finished) {
+          el.sendBtn.disabled = false;
+          el.finishBtn.disabled = false;
+        }
         updateIframeHeight();
       }
     }
 
-    function demoResponse(model, message, prompt) {
-      return `Demo only — ${model} would likely respond something like:\n\nI understand the task as: ${prompt}\n\nYour message was: ${message}\n\nA real backend call will replace this text once configured.`;
+    function demoResponse(model, message, prompt, turnNumber) {
+      const options = [
+        "I would approach this by identifying the budget line item and checking whether the cited percentage refers to outlays as a share of total federal spending.",
+        "The key question is whether the figure reflects Social Security's share of the federal budget, rather than its share of GDP or some other baseline.",
+        "A careful answer would distinguish between mandatory spending and discretionary spending, then compare Social Security to total federal outlays."
+      ];
+      const snippet = options[(turnNumber - 1) % options.length];
+      return `Demo only — ${model} would likely respond something like:\n\n${snippet}\n\nPrompt received: ${prompt}`;
     }
 
     function initFromParent(data) {
@@ -470,13 +549,16 @@
 
     window.addEventListener("message", (event) => {
       const data = event.data || {};
-      if (data && typeof data === "object" && data.type === "init-task") {
-        initFromParent(data);
+      if (data && typeof data === "object") {
+        if (data.type === "init-task") initFromParent(data);
       }
     });
 
     el.sendBtn.addEventListener("click", sendMessage);
+    el.finishBtn.addEventListener("click", finishChat);
+
     document.addEventListener("keydown", (e) => {
+      if (state.finished) return;
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") sendMessage();
     });
 
